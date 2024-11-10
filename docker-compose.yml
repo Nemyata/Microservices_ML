@@ -1,0 +1,53 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"      # Порт для подключения клиентов
+      - "15672:15672"    # Порт для панели управления
+
+  features:
+    build:
+      context: .
+    restart: always
+    depends_on:
+      - rabbitmq
+    command: python /app/features.py
+
+  predictor:
+    build:
+      context: .
+    restart: always
+    depends_on:
+      - rabbitmq
+      - features
+    command: python /app/predictor.py
+    volumes:
+      - ./logs:/app/logs
+
+
+  metric:
+    build:
+      context: .
+    restart: always
+    depends_on:
+      - rabbitmq
+      - features
+      - predictor
+    command: python /app/metric.py
+    volumes:
+      - ./logs:/app/logs
+
+
+  plot:
+    build:
+      context: .
+    restart: always
+    depends_on:
+      - rabbitmq
+      - features
+      - predictor
+      - metric
+    command: python /app/plot.py
+    volumes:
+      - ./logs:/app/logs
